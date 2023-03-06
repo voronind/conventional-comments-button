@@ -6,7 +6,7 @@ const questionIcon = `<svg aria-hidden="true" focusable="false" data-prefix="fas
 const commentIcon = `<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="comment" class="svg-inline--fa fa-comment fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M256 32C114.6 32 0 125.1 0 240c0 49.6 21.4 95 57 130.7C44.5 421.1 2.7 466 2.2 466.5c-2.2 2.3-2.8 5.7-1.5 8.7S4.8 480 8 480c66.3 0 116-31.8 140.6-51.4 32.7 12.3 69 19.4 107.4 19.4 141.4 0 256-93.1 256-208S397.4 32 256 32z"></path></svg>`;
 const homeIcon = `<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="home" class="svg-inline--fa fa-home fa-w-18" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path fill="currentColor" d="M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z"></path></svg>`;
 
-const semanticLabels = {
+const semanticLabels_OFF = {
   praise: {
     text: "praise",
     icon: trophyIcon,
@@ -41,6 +41,33 @@ const semanticLabels = {
     text: "chore",
     icon: homeIcon,
     blocking: true,
+  },
+};
+
+const semanticLabels = {
+  development: {
+    text: "development",
+    comment: "",
+    icon: exclamationIcon,
+    blocking: false,
+  },
+  review: {
+    text: "review",
+    comment: "Требуется ревью",
+    icon: questionIcon,
+    blocking: false,
+  },
+  testing: {
+    text: "testing",
+    comment: "Требуется тестирование",
+    icon: bugIcon,
+    blocking: false,
+  },
+  "merge-ready": {
+    text: "merge-ready",
+    comment: "Готово к слиянию",
+    icon: trophyIcon,
+    blocking: false,
   },
 };
 
@@ -81,6 +108,30 @@ const semanticButtonClickHandler = (e, { textarea, label, blocking }) => {
   saveChanges(textarea);
 };
 
+const mrButtonClickHandler = (e, { textarea, label, blocking }) => {
+  e.preventDefault();
+
+  const text = semanticLabels[label].text;
+  let unlabels = '';
+  for (const button of Object.values(semanticLabels)) {
+    if (button.text !== text) {
+      unlabels += `~"${button.text}" `;
+    }
+  }
+  let comment = `/unlabel ${unlabels}\n/label ~"${text}"\n`;
+
+  if (label == 'development') {
+    comment += '/unapprove\n';
+  } else {
+    comment += '/approve\n';
+  }
+
+  comment += '\n' + semanticLabels[label].comment;
+
+  fillTextAreaValue(textarea, comment, false);
+  saveChanges(textarea);
+};
+
 const buttonGenerator = (textarea, parent, label, blocking) => {
   const button = document.createElement("button");
   button.classList.add("has-tooltip");
@@ -96,7 +147,7 @@ const buttonGenerator = (textarea, parent, label, blocking) => {
   }
 
   button.addEventListener("click", (e) =>
-    semanticButtonClickHandler(e, { textarea, label, blocking })
+    mrButtonClickHandler(e, { textarea, label, blocking })
   );
   parent.appendChild(button);
 };
@@ -139,7 +190,7 @@ const saveChanges = (element) => {
 setInterval(function () {
   document
     .querySelectorAll(
-      "#note_note:not([data-semantic-button-initialized]), #note-body:not([data-semantic-button-initialized]), #review-note-body:not([data-semantic-button-initialized])"
+      "div.merge-request #note-body:not([data-semantic-button-initialized]), #review-note-body:not([data-semantic-button-initialized])"
     )
     .forEach(function (note) {
       note.dataset.semanticButtonInitialized = "true";
